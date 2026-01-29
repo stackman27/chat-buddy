@@ -12,7 +12,7 @@ function App() {
   const [inputHeight, setInputHeight] = useState(0);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const [apiEndpoint, setApiEndpoint] = useState("http://localhost:5000");
+  const [apiEndpoint, setApiEndpoint] = useState("");
   const [pollingInterval, setPollingInterval] = useState(200);
   const chatRef = useRef(null);
   const [systemMessage, setSystemMessage] = useState("");
