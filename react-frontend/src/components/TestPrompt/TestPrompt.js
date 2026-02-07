@@ -127,7 +127,7 @@ function TestPrompt({ apiEndpoint }) {
 
     try {
       // Set the active version temporarily for this test
-      await fetch(`${apiEndpoint}/api/prompts/active`, {
+      const activeVersionResponse = await fetch(`${apiEndpoint}/api/prompts/active`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -135,6 +135,11 @@ function TestPrompt({ apiEndpoint }) {
           version: selectedPromptVersion,
         }),
       });
+
+      if (!activeVersionResponse.ok) {
+        const errorData = await activeVersionResponse.json().catch(() => ({}));
+        throw new Error(`Failed to set active version: ${errorData.error || activeVersionResponse.statusText}`);
+      }
 
       // Call GPT with the selected prompt
       // Note: callGpt adds the user message and manages AI responses via setMessages
@@ -144,9 +149,9 @@ function TestPrompt({ apiEndpoint }) {
       setIsLoading(false);
       toast({
         title: "Error",
-        description: "Failed to send message",
+        description: error.message || "Failed to send message. Please check the console for details.",
         status: "error",
-        duration: 3000,
+        duration: 5000,
       });
     }
   };

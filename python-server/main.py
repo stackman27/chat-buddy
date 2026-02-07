@@ -22,6 +22,11 @@ PROMPTS_DIR = os.path.join(os.path.dirname(__file__), "prompts")
 ACTIVE_VERSIONS = {"staging": None, "prod": None}
 EVAL_SCORES = {}
 
+# Initialize agent
+instructions = "You are a helpful, friendly, and knowledgeable assistant. Provide clear, concise, and accurate responses. Be conversational but professional."
+settings = AgentSettings(instructions, "summaryAgent", 2000, 3000, 0.0, 3900)
+agent = GPT35Agent(settings)
+
 @app.route("/api/initial-prompts", methods=["GET"])
 def get_items():
     prompts = [
@@ -211,6 +216,42 @@ def set_active_version():
     
     if environment in ACTIVE_VERSIONS:
         ACTIVE_VERSIONS[environment] = version
+        
+        # Update agent system message if staging version is set
+        if environment == "staging" and version:
+            prompt_found = False
+            # Load the prompt for this version from files
+            if os.path.exists(PROMPTS_DIR):
+                for filename in os.listdir(PROMPTS_DIR):
+                    if filename.endswith(".json"):
+                        filepath = os.path.join(PROMPTS_DIR, filename)
+                        try:
+                            with open(filepath, "r") as f:
+                                prompt_data = json.load(f)
+                                if prompt_data.get("version") == version:
+                                    agent.set_system_message(prompt_data.get("prompt", ""), Role.SYSTEM.value)
+                                    prompt_found = True
+                                    break
+                        except Exception as e:
+                            print(f"Error loading prompt {filename}: {e}")
+            
+            # If not found in files, check default prompts
+            if not prompt_found:
+                default_prompts = [
+                    {"version": "v1", "prompt": "You are a helpful, friendly, and knowledgeable assistant. Provide clear, concise, and accurate responses. Be conversational but professional."},
+                    {"version": "v2", "prompt": "You are a technical expert with deep knowledge in software engineering, programming, and system design. Provide detailed, technical explanations with code examples when relevant. Be precise and thorough."},
+                    {"version": "v3", "prompt": "You are a creative writing assistant. Help users craft engaging stories, develop characters, and refine their writing style. Be imaginative, supportive, and provide constructive feedback."},
+                    {"version": "v4", "prompt": "You are a business consultant with expertise in strategy, operations, and growth. Provide actionable insights, analyze business problems, and suggest practical solutions. Be professional and data-driven."},
+                    {"version": "v5", "prompt": "You are an expert code reviewer. Analyze code for bugs, performance issues, security vulnerabilities, and best practices. Provide specific, actionable feedback with examples of improvements."},
+                    {"version": "v6", "prompt": "You are a customer support representative. Be empathetic, patient, and solution-oriented. Help customers resolve their issues efficiently while maintaining a friendly and professional tone."},
+                    {"version": "v7", "prompt": "You are a data analyst expert. Help users understand data, create insights, and make data-driven decisions. Explain statistical concepts clearly and provide practical analysis guidance."},
+                    {"version": "v8", "prompt": "You are a product management expert. Help with product strategy, feature prioritization, user research, and roadmap planning. Think strategically and consider user needs and business goals."},
+                ]
+                for default_prompt in default_prompts:
+                    if default_prompt.get("version") == version:
+                        agent.set_system_message(default_prompt.get("prompt", ""), Role.SYSTEM.value)
+                        break
+        
         return jsonify({"status": "ok", "environment": environment, "version": version})
     return jsonify({"error": "Invalid environment"}), 400
 
@@ -322,9 +363,4 @@ def set_system_message():
 
 
 if __name__ == '__main__':
-    instructions = """
-    You answer questions based on a provided context.
-"""
-    settings = AgentSettings(instructions, "summaryAgent", 2000, 3000, 0.0, 3900)
-    agent = GPT35Agent(settings)
     app.run(debug=True)
