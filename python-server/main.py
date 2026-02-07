@@ -13,7 +13,8 @@ from my_module.agent_settings import AgentSettings
 from my_module.role import Role
 from my_module.initial_prompt import InitialPrompt
 app = Flask(__name__)
-CORS(app)
+# Allow all origins for CORS (including Electron apps)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 results = {}
 
@@ -331,8 +332,10 @@ def add_message():
     thread.start()
 
     response = jsonify({"result_id": result_id})
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    # CORS is handled by CORS(app) above, but keep these for compatibility
+    response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
     return response
 
 @app.route('/api/results/<string:result_id>', methods=['GET'])

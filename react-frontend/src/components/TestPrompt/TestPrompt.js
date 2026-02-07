@@ -123,6 +123,16 @@ function TestPrompt({ apiEndpoint }) {
       return;
     }
 
+    if (!apiEndpoint) {
+      toast({
+        title: "Error",
+        description: "Please set API endpoint in Settings",
+        status: "error",
+        duration: 5000,
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {

@@ -46,12 +46,19 @@ export const pollResult = async (apiEndpoint, result_id, messageID, pollingInter
 };
 
 export const callGpt = async (apiEndpoint, content, pollingInterval, setMessage, setMessages, setIsLoading = null) => {
+    if (!apiEndpoint) {
+      throw new Error("API endpoint is not set");
+    }
+
     // Store the last message ID
     addMessage(content, "user", setMessages);
     setMessage("");
 
     try {
-      const response = await fetch(`${apiEndpoint}/api/messages`, {
+      const url = `${apiEndpoint}/api/messages`;
+      console.log("Calling GPT API:", url);
+      
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -63,7 +70,9 @@ export const callGpt = async (apiEndpoint, content, pollingInterval, setMessage,
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error("API Error Response:", errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       const data = await response.json();
@@ -76,6 +85,10 @@ export const callGpt = async (apiEndpoint, content, pollingInterval, setMessage,
       console.error("Error calling GPT:", error);
       if (setIsLoading) {
         setIsLoading(false);
+      }
+      // Provide more helpful error messages
+      if (error.message.includes("Failed to fetch")) {
+        throw new Error(`Failed to connect to ${apiEndpoint}. Please check if the server is running and the URL is correct.`);
       }
       throw error;
     }
